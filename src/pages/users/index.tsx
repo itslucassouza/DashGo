@@ -5,16 +5,29 @@ import { Box, Flex, Heading, Text } from "@chakra-ui/layout";
 import { useBreakpointValue } from "@chakra-ui/media-query";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@chakra-ui/table";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { RiAddLine, RiPencilLine } from "react-icons/ri";
 import { Header } from "../../components/Header";
 import { Pagination } from "../../components/Pagination";
 import {Sidebar} from '../../components/Sidebar';
+import { useQuery } from 'react-query';
+import { Spinner } from "@chakra-ui/spinner";
+import { api } from "../../services/api";
+import { useUsers } from "../../services/hooks/useUsers";
 
 export default function UserList() {
+    const [page, setPage] = useState(1)
+    const {data, isLoading, isFetching , error} = useUsers(page)
+
     const isWideVersion = useBreakpointValue({
         base: false,
         lg: true,
       })
+
+
+      useEffect(() => {
+        
+      }, [])
     return(
         <Box>
             <Header />
@@ -24,13 +37,31 @@ export default function UserList() {
 
                 <Box flex="1" borderRadius={8} bg="gray.800" p="8">
                     <Flex mb="8" justify="space-between" align="center">
-                    <Heading size="lg" fontWeight="normal">Listagem de usuários</Heading>
+                    <Heading size="lg" fontWeight="normal">Listagem de usuários
+                    {
+                        !isLoading && isFetching && (
+                            <Spinner size="sm" color="gray.500" ml="4" />
+                        )
+                    }
+                    
+                    </Heading>
                     <Link href="/users/create" passHref>
                     <Button as="a" size="sm" fontSize="20" colorScheme="pink" leftIcon={<Icon as={RiAddLine} />} >Criar novo</Button>
                     </Link>
                     </Flex>
 
-                    <Table colorScheme="whiteAlpha">
+                    {
+                        isLoading ? (
+                            <Flex justify="center">
+                                <Spinner />
+                            </Flex>
+                        ) : error ? (
+                            <Flex justify="center">
+                                <Text>Falha ao obter dados do usuário</Text>
+                            </Flex>
+                        ) : (
+                            <>
+<Table colorScheme="whiteAlpha">
                         <Thead>
                              <Tr>
                                  <Th px={["4", "4", "6"]} color="gray.300" width="8" >
@@ -43,17 +74,19 @@ export default function UserList() {
                         </Thead>
 
                         <Tbody>
-                            <Tr>
+                            {data.users.map(user => {
+                                return(
+                                    <Tr key={user.id}>
                                 <Td px={["4", "4", "6"]}>
                                 <Checkbox colorScheme="pink" />
                                 </Td>
                                 <Td>
                                     <Box>
-                                        <Text fontWeight="bold">Lucas Souza</Text>
-                                        <Text fontSize="sm" color="gray.300">lucasvini193@hotmail.com</Text>
+                                        <Text fontWeight="bold">{user.name}</Text>
+                                        <Text fontSize="sm" color="gray.300">{user.email}</Text>
                                     </Box>
                                 </Td>
-                                {isWideVersion && <Th>04 de abril, 2018</Th>}
+                                {isWideVersion && <Th>{user.createdAt}</Th>}
                                 <Td>
                                     {isWideVersion ? (
                                         <>
@@ -65,10 +98,18 @@ export default function UserList() {
                                     )}
                                 </Td>
                             </Tr>
+                                )
+                            })}
                         </Tbody>
                     </Table>
 
-                    <Pagination />
+                    <Pagination 
+                        totalCountOfRegisters={data.totalCount}
+                            currentPage={page}
+                            onPageChange={setPage}/>
+                    </>
+                        )
+                    }
                 </Box>
         
             </Flex>
